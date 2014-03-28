@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-from annoying.decorators import ajax_login_required
+
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -8,6 +8,18 @@ from django.utils import simplejson
 from favorites import settings as fav_settings
 from favorites.models import Favorite
 from favorites.utils import build_message
+
+def ajax_login_required(view_func):
+    def wrap(request, *args, **kwargs):
+        if request.user.is_authenticated():
+            return view_func(request, *args, **kwargs)
+        json = simplejson.dumps({'not_authenticated': True})
+        return HttpResponse(json, mimetype='application/json', status=401)
+    wrap.__doc__ = view_func.__doc__
+    wrap.__dict__ = view_func.__dict__
+    return wrap
+
+
 
 @ajax_login_required
 def ajax_fav(request, ctype_id, obj_id):
